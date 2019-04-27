@@ -1,0 +1,40 @@
+{
+    "name": "ESP32httpUpdate", 
+    "version": "2.1.145", 
+    "keywords": [
+        "data", 
+        "processing"
+    ], 
+    "description": "Http Update for ESP32", 
+    "frameworks": [
+        "arduino"
+    ], 
+    "platforms": [
+        "espressif32"
+    ], 
+    "authors": [
+        {
+            "email": null, 
+            "url": null, 
+            "maintainer": true, 
+            "name": "Matej Sychra"
+        }
+    ], 
+    "repository": {
+        "type": "git", 
+        "url": "https://github.com/suculent/esp32-http-update"
+    }, 
+    "homepage": null, 
+    "export": {
+        "include": null, 
+        "exclude": [
+            "extras", 
+            "docs", 
+            "tests", 
+            "test", 
+            "*.doxyfile", 
+            "*.pdf"
+        ]
+    }, 
+    "id": 2013
+}
