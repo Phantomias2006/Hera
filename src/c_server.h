@@ -33,6 +33,13 @@ void server_setup() {
     
   server.addHandler(&nanoWebHandler);
   server.addHandler(&bodyWebHandler);
+
+#ifdef MINI
+  // handler for uploading nextion tft file
+  server.on("/nexupload", HTTP_POST, [](AsyncWebServerRequest *request){
+     request->send(200, TEXTPLAIN, TEXTTRUE);
+  }, onNexUpload);
+#endif
     
   server.on("/help",HTTP_GET, [](AsyncWebServerRequest *request) {
     request->redirect("https://github.com/WLANThermo-nano/WLANThermo_nano_Software/blob/master/README.md");

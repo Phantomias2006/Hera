@@ -42,7 +42,6 @@
   #define IPRINTP(...)   Serial.print("[INFO]\t");Serial.print(F(__VA_ARGS__))
   #define IPRINTPLN(...) Serial.print("[INFO]\t");Serial.println(F(__VA_ARGS__))
   #define IPRINTF(...)   Serial.print("[INFO]\t");Serial.printf(__VA_ARGS__)
-  
 #else
   #define DPRINT(...)     //blank line
   #define DPRINTLN(...)   //blank line 
@@ -73,10 +72,8 @@
 // INCLUDE SUBROUTINES
 #include <vector>
 #include "c_init.h"
-#include "c_webhandler.h"
 #include "c_median.h"
 #ifdef NANO
-#include "c_button.h"
 #include "c_sensor_nano.h"
 #else
 #include "c_sensor_mini.h"
@@ -85,7 +82,6 @@
 #include "c_temp.h"
 #include "c_ee.h"
 #include "c_fs.h"
-#include "c_com.h"
 #include "c_icons.h"
 #include "c_wifi.h"
 #ifdef NANO
@@ -93,6 +89,11 @@
 #else
 #include "c_display.h"
 #endif
+#include "c_webhandler.h"
+#ifdef NANO
+#include "c_button.h"
+#endif
+#include "c_com.h"
 #include "c_bot.h"
 #include "c_pmqtt.h"
 #include "c_ota.h"

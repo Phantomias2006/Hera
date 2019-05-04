@@ -42,6 +42,7 @@
 #define NETWORK_CLEAR "/clearwifi"
 #define CONFIG_RESET  "/configreset"
 #define ADMIN         "/admin"
+#define UPLOAD        "/upload"
 
 #define SET_NETWORK   "/setnetwork"
 #define SET_SYSTEM    "/setsystem"
@@ -64,6 +65,19 @@
 #define TEXTTRUE "true"
 #define TEXTFALSE "false"
 #define TEXTADD "Add"
+
+const char* upload_page ="<form method='POST' action='/nexupload' enctype='multipart/form-data'> \ 
+<input type='file' name='file' id='file' onchange=\"fileInfo()\"> \ 
+<input type='submit' value='Update'></form> \ 
+<script type='text/javascript'> \ 
+function fileInfo(){ \ 
+    var fileSize = document.getElementById('file').files[0].size; \
+    var xmlHttp = new XMLHttpRequest(); \
+    xmlHttp.open(\"POST\",\"/upload?usize=\" + fileSize, true); \
+    xmlHttp.setRequestHeader(\"Content-Type\", \"application/x-www-form-urlencoded\"); \
+    xmlHttp.send(); \
+} \ 
+</script>";
 
 const char *public_list[]={
 "/nano.ttf",
@@ -471,6 +485,25 @@ public:
       //sendFile(request,path); //
         request->send(SPIFFS, path);
     }
+
+#ifdef MINI
+    // REQUEST: /upload
+    else if (request->url() == UPLOAD) {
+      if (request->method() == HTTP_GET) {
+        request->send(200, "text/html", upload_page);
+      } else if (request->method() == HTTP_POST) {
+        if (request->hasArg("usize")) {
+          String usize = request->arg("usize");
+          nexUpload.SetFileSize(usize.toInt());
+        }
+        else {
+          Serial.println("upload arg missing");
+        }
+        request->send(200, TEXTPLAIN, TEXTTRUE);
+      } else request->send(500, TEXTPLAIN, BAD_PATH);
+      return;
+    }
+#endif
   }
 
   // --------------------- 
@@ -481,6 +514,7 @@ public:
         || request->url() == NETWORK_STOP || request->url() == NETWORK_CLEAR 
         || request->url() == CONFIG_RESET || request->url() == UPDATE_PATH 
         || request->url() == UPDATE_CHECK || request->url() == ADMIN
+        || request->url() == UPLOAD
       //|| request->url() == LOGGING_PATH
       ){
         return true;
@@ -503,6 +537,7 @@ public:
         || request->url() == CONFIG_RESET || request->url() == UPDATE_PATH
         || request->url() == UPDATE_CHECK || request->url() == UPDATE_STATUS
         || request->url() == DC_STATUS  || request->url() == ADMIN
+        || request->url() == UPLOAD
         //|| request->url() == LOGGING_PATH
         )
         return true;    

@@ -31,6 +31,7 @@
 #include <ESP8266mDNS.h>          // mDNS
 #include <EspAsyncTCP.h>          // ASYNCTCP
 #else
+#include <NexUpload.h>
 #include <Nextion.h>
 #include <ESPmDNS.h>              // mDNS
 #include <AsyncTCP.h>             // ASYNCTCP
