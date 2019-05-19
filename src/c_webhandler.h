@@ -463,6 +463,24 @@ public:
       } else request->send(500, TEXTPLAIN, BAD_PATH);
       return;
 
+#ifdef MINI
+    // REQUEST: /upload
+    } else if (request->url() == UPLOAD) {
+      if (request->method() == HTTP_GET) {
+        request->send(200, "text/html", upload_page);
+      } else if (request->method() == HTTP_POST) {
+        if (request->hasArg("usize")) {
+          String usize = request->arg("usize");
+          nexUpload.SetFileSize(usize.toInt());
+        }
+        else {
+          Serial.println("upload arg missing");
+        }
+        request->send(200, TEXTPLAIN, TEXTTRUE);
+      } else request->send(500, TEXTPLAIN, BAD_PATH);
+      return;
+#endif
+
     // REQUEST: File from SPIFFS
     } else if (request->method() == HTTP_GET){
       String path = request->url();
@@ -485,25 +503,6 @@ public:
       //sendFile(request,path); //
         request->send(SPIFFS, path);
     }
-
-#ifdef MINI
-    // REQUEST: /upload
-    else if (request->url() == UPLOAD) {
-      if (request->method() == HTTP_GET) {
-        request->send(200, "text/html", upload_page);
-      } else if (request->method() == HTTP_POST) {
-        if (request->hasArg("usize")) {
-          String usize = request->arg("usize");
-          nexUpload.SetFileSize(usize.toInt());
-        }
-        else {
-          Serial.println("upload arg missing");
-        }
-        request->send(200, TEXTPLAIN, TEXTTRUE);
-      } else request->send(500, TEXTPLAIN, BAD_PATH);
-      return;
-    }
-#endif
   }
 
   // --------------------- 
