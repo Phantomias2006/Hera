@@ -102,6 +102,7 @@
 #define EEPUSH              512         
 
 // PITMASTER
+#ifdef NANO
 #define PITMASTER0IO1 15               // PITMASTER PIN
 #define PITMASTER0IO2 14               // CLK // ab Platine V7.2
 #define PITSUPPLY  12               // MISO // ab Platine V9.3
@@ -113,6 +114,28 @@
 #define PITMASTERSETMAX 200
 #define SERVOPULSMIN 550  // 25 Grad    // 785
 #define SERVOPULSMAX 2250
+#elif MINI     
+#define PITMASTER0IO1 25   // Fan Pin
+#define PITMASTER0IO2 22   // Data Pin
+#define PITMASTER1IO1 26   // Fan Pin
+#define PITMASTER1IO2 27   // Data Pin
+#define PITMIN 0                    // LOWER LIMIT SET
+#define PITMAX 100                  // UPPER LIMIT SET
+#define PITMASTERSIZE 2             // PITMASTER SETTINGS LIMIT
+#define PIDSIZE 3
+#define PITMASTERSETMIN 50
+#define PITMASTERSETMAX 200
+#define SERVOPULSMIN 550  // 25 Grad    // 785
+#define SERVOPULSMAX 2250
+#endif
+
+// HW Config
+#ifdef MINI
+#define PIEPSER     24       // IO for Alarm
+#define SPI_CS      21 	     // SPI slave select
+#define ADC_VREF    3300     // 3.3V Vref
+#define ADC_CLK     1600000  // SPI clock 1.6MHz
+#endif
 
 
 #define PRODUCTNUMBERLENGTH 11

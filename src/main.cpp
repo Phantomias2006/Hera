@@ -75,10 +75,11 @@
 #include "c_median.h"
 #ifdef NANO
 #include "c_sensor_nano.h"
+#include "c_pitmaster_nano.h"
 #else
 #include "c_sensor_mini.h"
+#include "c_pitmaster_mini.h"
 #endif
-#include "c_pitmaster.h"
 #include "c_temp.h"
 #include "c_ee.h"
 #include "c_fs.h"
@@ -240,12 +241,17 @@ void loop() {
     #endif
 
     // Pitmaster eventuell raus aus der Bedingung
+#ifdef MINI
+    pitmaster_control(0);      // Pitmaster 1
+    pitmaster_control(1);      // Pitmaster 2
+#elif NANO
     pitmaster_control(0);      // Pitmaster 1
     updateServo();
     
     if (servointerrupt) {   // nur innerhalb eines Servo-Takts
       delay(10);   // sonst geht das Wifi Modul nicht in Standby, yield() reicht nicht!
     }
+#endif
   }
   
 }

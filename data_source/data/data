@@ -7,7 +7,8 @@
         "soc": 39,
         "charge": true,
         "rssi": -67,
-        "online": 2
+        "online": 2,
+        "hasBattery": true
     },
     "channel": [
         {
@@ -100,6 +101,16 @@
         "pm": [
             {
                 "id": 0,
+                "channel": 1,
+                "pid": 0,
+                "value": 0,
+                "set": 50.00,
+                "typ": "off",
+                "set_color": "#ff0000",
+                "value_color": "#000000"
+            },
+             {
+                "id": 1,
                 "channel": 1,
                 "pid": 0,
                 "value": 0,

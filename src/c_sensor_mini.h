@@ -27,17 +27,14 @@
     
  ****************************************************/
 
-#define SPI_CS    	5 		   // SPI slave select
-#define ADC_VREF    3300     // 3.3V Vref
-#define ADC_CLK     1600000  // SPI clock 1.6MHz
-
 MCP3208 adc(ADC_VREF, SPI_CS);
-
-// https://github.com/adafruit/Adafruit_HTU21DF_Library/blob/master/Adafruit_HTU21DF.cpp
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Initialize Sensors
 void set_sensor() {
+
+  // disable battery
+  sys.hasBattery = false;
 
   // Piepser
   //pinMode(MOSI, OUTPUT);
@@ -54,66 +51,7 @@ void set_sensor() {
   SPI.begin();
   SPI.beginTransaction(settings);
   
-  if (sys.typk && sys.hwversion == 1) {
-    // CS notwendig, da nur bei CS HIGH neue Werte im Chip gelesen werden
-    pinMode(THERMOCOUPLE_CS, OUTPUT);
-    digitalWrite(THERMOCOUPLE_CS, HIGH);
-  }
-
-  // MAX11615
-  byte reg = 0xA0;    // A0 = 10100000
-  // page 14
-  // 1: setup mode
-  // SEL:010 = Reference (Table 6)
-  // external(1)/internal(0) clock
-  // unipolar(0)/bipolar(1)
-  // 0: reset the configuration register to default
-  // 0: dont't care
- 
-  Wire.beginTransmission(MAX11615_ADDRESS);
-  Wire.write(reg);
-  byte error = Wire.endTransmission();
-  IPRINTP("MAX1161x: ");
-  if (error == 0) {
-    DPRINTP("0x");
-    DPRINTLN(MAX11615_ADDRESS, HEX);
-    MAX1161x_ADDRESS = MAX11615_ADDRESS;
-/*  } else {
-
-    // MAX11613
-    reg = 0xA0;    
-    // page 14
-    // 80 = 10000000 -> VCC (3V3) als Referenz, nur mit 0R wenn Doppelfühler, Toleranz wird größer
-    // D0 = 11010000 -> interne Referenz, passt nicht überein, Werte zu tief
-    // A0 = 10100000 -> externe Referenz, dann kein Doppelfühler
-    // IC kann nur VCC = 3V3, nicht 2V
-    // 1: setup mode
-    // SEL[0:2] = Reference (Table 6)
-    // external(1)/internal(0) clock
-    // unipolar(0)/bipolar(1)
-    // 0: reset the configuration register to default
-    // 0: dont't care
-
-    Wire.beginTransmission(MAX11613_ADDRESS);
-    Wire.write(reg);
-    error = Wire.endTransmission();
-
-    if (error == 0) {
-      DPRINTP("0x");
-      DPRINTLN(MAX11613_ADDRESS, HEX);
-      MAX1161x_ADDRESS = MAX11613_ADDRESS;
-      if (sys.ch != 3) {
-        sys.ch = 3;
-        Serial.println("Umstellung auf LITE-3");
-        setconfig(eSYSTEM,{});
-      }
-      sys.pitmaster = false;
- */   } else DPRINTPLN("No");
-//  }
-  
 }
-
-portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Reading ADC-Channel Average
@@ -150,25 +88,25 @@ void cal_soc() {
 void set_piepser() {
 
   // Hardware-Alarm bereit machen
-  pinMode(T7, OUTPUT);
+  pinMode(PIEPSER, OUTPUT);
   analogWriteFrequency(4000);
   //sys.hwalarm = false;
-  
+
 }
 
 void piepserON() {
-  analogWrite(T7,512);
+  analogWrite(PIEPSER, 512);
   sys.piepoff_t = 2;
 }
 
 void piepserOFF() {
-  if (sys.piepoff_t == 0) analogWrite(T7,0);
+  if (sys.piepoff_t == 0) analogWrite(PIEPSER,0);
   else if (sys.piepoff_t > -2) sys.piepoff_t--;
 }
 
 void pbguard() {
   //analogWriteFreq(5);
-  analogWrite(T7,1023);
+  analogWrite(PIEPSER,1023);
   sys.piepoff_t = 2;        // für 2 Zyklen
 }
 
@@ -237,32 +175,6 @@ void controlAlarm(){                // action dient zur Pulsung des Signals
   if (setalarm) piepserON(); 
 }
 
-#ifdef AMPERE
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Reading Ampere IC
-unsigned long ampere_sum = 0;
-unsigned long ampere_con = 0;
-float ampere = 0;
-unsigned long ampere_time;
-
-void ampere_control() {
-    
-    ampere_sum += ((get_adc_average(5) * 2.048 )/ 4096.0)*1000.0;
-    ampere_con++;
-
-    if (millis()-ampere_time > 10*60*1000) {
-      ampere_time = millis();
-      ampere = ampere_sum/ampere_con;
-      ampere_con = 0;
-      ampere_sum = 0;
-    } else if (millis() < 120000) {
-      ampere = ampere_sum/ampere_con;
-    }
-}
-
-#endif
-
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Reading Temperature KTYPE
 double get_thermocouple(bool internal) {
@@ -306,8 +218,3 @@ double get_thermocouple(bool internal) {
   vv *= 0.25;
   return vv;
 }
-
-
-// bei einem Neustart flag auf false, ebenfalls wenn voll geladen
-// dann alle 5 min speichern und beim ersten speichern flag auf true
-

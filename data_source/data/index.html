@@ -2630,7 +2630,7 @@
 			<span></span>
 		</a>
 		<div id="thermoname">N.C.</div>
-		<div class="battery" onclick="setshowBatteryWlanIcon();">N.C.</div>
+		<div class="battery" onclick="setshowBatteryWlanIcon();"></div>
 		<div class="wifi" onclick="setshowBatteryWlanIcon();">N.C.</div>
 		<div class="cloud" onclick="clickCloudIcon();"></div>
 		<div class="notification" style="display:none" onclick="update();"><span class="icon-notification icon-yellow"> </span></div>
@@ -2815,9 +2815,13 @@
 				<div class="pure-u-1-1 pure-u-lg-1-1">
 					<div class="1-box channel_conf">
 						<form>
+                            <div class="form-group">
+								<select id="pitmaster_id" onchange="changePitmasterId();"><!-- Placeholder --></select>
+								<label class="control-label" for="select"><span data-tag="pitID">Pitmaster</span></label><i class="bar"></i>
+							</div>
 							<div class="form-group">
 								<select id="pitmaster_typ" onchange="changePitmasterTyp();"><!-- Placeholder --></select>
-								<label class="control-label" for="select"><span data-tag="pitPitmaster">Pitmaster</span></label><i class="bar"></i>
+								<label class="control-label" for="select"><span data-tag="pitPitmaster">Typ</span></label><i class="bar"></i>
 							</div>
 							<div id="pitmaster_profile_show">
 								<div class="form-group">
@@ -3375,7 +3379,7 @@
 		menuHome.onclick = function (e) {if (menu.className.indexOf('active') !== -1) {toggleAll(e);showIndex();}};
 		menuWlan.onclick = function (e) {if (menu.className.indexOf('active') !== -1) {toggleAll(e);showWLAN();}};
 		menuIOT.onclick = function (e) {if (menu.className.indexOf('active') !== -1) {toggleAll(e);showIOT();}};
-		menuPitmaster.onclick = function (e) {if (menu.className.indexOf('active') !== -1) {toggleAll(e);showPitmaster();}};
+		menuPitmaster.onclick = function (e) {if (menu.className.indexOf('active') !== -1) {toggleAll(e);showPitmaster(0);}};
 		menuNotification.onclick = function (e) {if (menu.className.indexOf('active') !== -1) {toggleAll(e);showPushNotification();}};
 		menuSystem.onclick = function (e) {if (menu.className.indexOf('active') !== -1) {toggleAll(e);showSystem();}};
 		menuHistory.onclick = function (e) {if (menu.className.indexOf('active') !== -1) {toggleAll(e);showHistory();}};
@@ -3828,25 +3832,29 @@
 	}
 	// -----------------------------------------------------------------------------------
 	
-	function showPitmaster(){		
+	function showPitmaster(pitID){		
 		hideAll();
 		showLoader('true');
 		loadJSON('data', '', '3000', function (response) {
 			jr = JSON.parse(response);
-			pitID = 0;	// Pitmaster1
-			clearOption('pitmaster_typ');
-			for (var j = 0; j < jr.pitmaster.type.length; j++) {
-				byId('pitmaster_typ').options[byId('pitmaster_typ').options.length] = new Option(jr.pitmaster.type[j], jr.pitmaster.type[j]);
-			}
-			byId('pitmaster_typ').value = jr.pitmaster.pm[pitID].typ;
-			clearOption('pitmaster_channel');
-			for (var i = 0; i < jr.channel.length; i++) {
-				byId('pitmaster_channel').options[byId('pitmaster_channel').options.length] = new Option('#' + jr.channel[i].number + ' - ' + jr.channel[i].name, jr.channel[i].number);
-			}
-			byId('pitmaster_channel').value = jr.pitmaster.pm[pitID].channel;
-			byId('pitmaster_set').value = jr.pitmaster.pm[pitID].set;
-			byId('pitmaster_value').value = jr.pitmaster.pm[pitID].value;
-			byId('pitmaster_settings').style.display = "inline";
+            clearOption('pitmaster_id');
+            clearOption('pitmaster_typ');
+            for (var j = 0; j < jr.pitmaster.pm.length; j++) {
+                byId('pitmaster_id').options[byId('pitmaster_id').options.length] = new Option('Pitmaster ' + (jr.pitmaster.pm[j].id + 1), jr.pitmaster.pm[j].id);
+            }
+            for (var j = 0; j < jr.pitmaster.type.length; j++) {
+                byId('pitmaster_typ').options[byId('pitmaster_typ').options.length] = new Option(jr.pitmaster.type[j], jr.pitmaster.type[j]);
+            }
+            byId('pitmaster_id').value = jr.pitmaster.pm[pitID].id;
+            byId('pitmaster_typ').value = jr.pitmaster.pm[pitID].typ;
+            clearOption('pitmaster_channel');
+            for (var i = 0; i < jr.channel.length; i++) {
+                byId('pitmaster_channel').options[byId('pitmaster_channel').options.length] = new Option('#' + jr.channel[i].number + ' - ' + jr.channel[i].name, jr.channel[i].number);
+            }
+            byId('pitmaster_channel').value = jr.pitmaster.pm[pitID].channel;
+            byId('pitmaster_set').value = jr.pitmaster.pm[pitID].set;
+            byId('pitmaster_value').value = jr.pitmaster.pm[pitID].value;
+            byId('pitmaster_settings').style.display = "inline";
 			showLoader('false');
 			showPitmasterProfile(jr.pitmaster.pm[pitID].pid);
 			changePitmasterTyp();
@@ -3896,12 +3904,16 @@
 				byId('advanced_settings_show').style.display = "inline";
 		} 		
 	}
+    
+    function changePitmasterId(){
+        showPitmaster(byId('pitmaster_id').value);
+	}
 	
 	function setPitmaster(){
 		showLoader('true');
 		loadJSON('data', '', '3000', function (response) {
 			jr = JSON.parse(response);
-			pitID = 0;	// Pitmaster1
+			pitID = byId('pitmaster_id').value;
 			jr.pitmaster.pm[pitID].typ = byId('pitmaster_typ').value;
 			jr.pitmaster.pm[pitID].channel = byId('pitmaster_channel').value;
 			jr.pitmaster.pm[pitID].set = byId('pitmaster_set').value;
@@ -4140,8 +4152,10 @@
 				
 				if(channel_init === false){addChannel(jr.channel.length);}
 				
-				BatteryIcon = getBatteryIcon(jr.system.soc,jr.system.charge);
-				byClass("battery")[0].innerHTML = BatteryIcon;
+				if(jr.system.hasBattery == true) {
+					BatteryIcon = getBatteryIcon(jr.system.soc,jr.system.charge);
+					byClass("battery")[0].innerHTML = BatteryIcon;
+				}
 				byClass("cloud")[0].innerHTML = getCloudIcon(jr.system.online);
 				RSSIIcon = getRSSIIcon(jr.system.rssi);
 				byClass("wifi")[0].innerHTML = RSSIIcon;

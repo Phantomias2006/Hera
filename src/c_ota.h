@@ -43,24 +43,30 @@
     ArduinoOTA.setHostname((const char *)sys.host.c_str());
 
     ArduinoOTA.onStart([]() {
+#ifdef NANO
       display.clear();
       display.setFont(ArialMT_Plain_10);
       display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
       display.drawString(DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2 - 10, "OTA Update");
       display.display();
+#endif
     });
 
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+#ifdef NANO
       display.drawProgressBar(4, 32, 120, 8, progress / (total / 100) );
       display.display();
+#endif
     });
 
     ArduinoOTA.onEnd([]() {
+#ifdef NANO
       display.clear();
       display.setFont(ArialMT_Plain_10);
       display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
       display.drawString(DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2, "Restart");
       display.display();
+#endif
     });
 
     ArduinoOTA.onError([](ota_error_t error) {

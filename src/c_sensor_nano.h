@@ -34,6 +34,9 @@
 // Initialize Sensors
 void set_sensor() {
 
+  // enable battery
+  sys.hasBattery = true;
+
   // Piepser
   pinMode(MOSI, OUTPUT);
   analogWriteFreq(4000);

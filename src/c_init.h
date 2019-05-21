@@ -39,6 +39,7 @@
 #define analogWriteFreq analogWriteFrequency
 #define FLASH_SECTOR_SIZE SPI_FLASH_SEC_SIZE
 #include <Mcp3208.h>
+#include <Servo.h>
 #endif
 #include <ESPAsyncWebServer.h>    // https://github.com/me-no-dev/ESPAsyncWebServer/issues/60
 #include "AsyncJson.h"            // ASYNCJSON
@@ -122,6 +123,7 @@ enum {PITOFF, MANUAL, AUTO, AUTOTUNE, DUTYCYCLE, MYAUTO};
 enum {SSR, FAN, SERVO, DAMPER, FAN2, SERVO2, NOAR};
 
 struct Pitmaster {
+   byte  id;                // PITMASTER ID
    byte  pid;               // PITMASTER LINKED PID
    float set;               // SET-TEMPERATUR
    byte  active;            // PITMASTER ACTIVITY
@@ -242,6 +244,7 @@ struct System {
    String item;
    byte server_state;         // Server Communication: 0:no, 1:yes
    byte cloud_state;          // Cloud Communication: 0: deaktiviert, 1: Fehler, 2: aktiv
+   bool hasBattery;
 
    uint8_t ch;                // Amount of active channels
    int8_t piepoff_t;

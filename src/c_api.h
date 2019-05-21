@@ -62,6 +62,7 @@ void systemObj(JsonObject  &jObj, bool settings = false) {
     jObj["charge"]  = battery.charge;
     jObj["rssi"]    = wifi.rssi;
     jObj["online"]  = sys.cloud_state;
+    jObj["hasBattery"]  = sys.hasBattery;
   } else {  
     jObj["ap"] =         sys.apname;
     jObj["host"] =       sys.host;
