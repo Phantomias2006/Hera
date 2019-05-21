@@ -2703,7 +2703,7 @@
                 <li id="menuHome" class="pure-menu-item"><a href="javascript:showIndex()" class="pure-menu-link" data-tag="menuHome">Home</a></li>
 				<li id="menuWlan" class="pure-menu-item"><a href="javascript:showWLAN()" class="pure-menu-link" data-tag="menuWlan">WLAN</a></li>
 				<li id="menuSystem" class="pure-menu-item"><a href="javascript:showSystem()" class="pure-menu-link" data-tag="menuSystem">System</a></li>
-				<li id="menuPitmaster" class="pure-menu-item"><a href="javascript:showPitmaster()" class="pure-menu-link" data-tag="menuPitmaster">Pitmaster</a></li>
+				<li id="menuPitmaster" class="pure-menu-item"><a href="javascript:showPitmaster(0)" class="pure-menu-link" data-tag="menuPitmaster">Pitmaster</a></li>
 				<li id="menuIOT" class="pure-menu-item"><a href="javascript:showIOT()" class="pure-menu-link" data-tag="menuIOT">IoT</a></li>
 				<li id="menuHistory" class="pure-menu-item"><a href="javascript:showHistory()" class="pure-menu-link" data-tag="menuHistory">Historie</a></li>
 				<li id="menuNotification" class="pure-menu-item"><a href="javascript:showPushNotification()" class="pure-menu-link" data-tag="menuNotification">Benachrichtigung</a></li>
@@ -2788,7 +2788,7 @@
 					<div class="1-box channel_conf">
 						<form>							
 							<div class="form-group">
-							  <input name="ssidInput" type="text" onkeyup="setssidInput();"maxlength="32" required="required"/>
+							  <input name="ssidInput" type="text" onkeyup="setssidInput();" maxlength="32" required="required"/>
 							  <label class="control-label" for="input"><span data-tag="wlanSSID">SSID</span></label><i class="bar"></i>
 							</div>			
 							<div class="form-group">
@@ -2815,7 +2815,7 @@
 				<div class="pure-u-1-1 pure-u-lg-1-1">
 					<div class="1-box channel_conf">
 						<form>
-                            <div class="form-group">
+              <div class="form-group">
 								<select id="pitmaster_id" onchange="changePitmasterId();"><!-- Placeholder --></select>
 								<label class="control-label" for="select"><span data-tag="pitID">Pitmaster</span></label><i class="bar"></i>
 							</div>
@@ -3832,29 +3832,29 @@
 	}
 	// -----------------------------------------------------------------------------------
 	
-	function showPitmaster(pitID){		
+	function showPitmaster(pitID){	
 		hideAll();
 		showLoader('true');
 		loadJSON('data', '', '3000', function (response) {
 			jr = JSON.parse(response);
-            clearOption('pitmaster_id');
-            clearOption('pitmaster_typ');
-            for (var j = 0; j < jr.pitmaster.pm.length; j++) {
-                byId('pitmaster_id').options[byId('pitmaster_id').options.length] = new Option('Pitmaster ' + (jr.pitmaster.pm[j].id + 1), jr.pitmaster.pm[j].id);
-            }
-            for (var j = 0; j < jr.pitmaster.type.length; j++) {
-                byId('pitmaster_typ').options[byId('pitmaster_typ').options.length] = new Option(jr.pitmaster.type[j], jr.pitmaster.type[j]);
-            }
-            byId('pitmaster_id').value = jr.pitmaster.pm[pitID].id;
-            byId('pitmaster_typ').value = jr.pitmaster.pm[pitID].typ;
-            clearOption('pitmaster_channel');
-            for (var i = 0; i < jr.channel.length; i++) {
-                byId('pitmaster_channel').options[byId('pitmaster_channel').options.length] = new Option('#' + jr.channel[i].number + ' - ' + jr.channel[i].name, jr.channel[i].number);
-            }
-            byId('pitmaster_channel').value = jr.pitmaster.pm[pitID].channel;
-            byId('pitmaster_set').value = jr.pitmaster.pm[pitID].set;
-            byId('pitmaster_value').value = jr.pitmaster.pm[pitID].value;
-            byId('pitmaster_settings').style.display = "inline";
+			clearOption('pitmaster_id');
+			clearOption('pitmaster_typ');
+			for (var j = 0; j < jr.pitmaster.pm.length; j++) {
+					byId('pitmaster_id').options[byId('pitmaster_id').options.length] = new Option('Pitmaster ' + (jr.pitmaster.pm[j].id + 1), jr.pitmaster.pm[j].id);
+			}
+			for (var j = 0; j < jr.pitmaster.type.length; j++) {
+					byId('pitmaster_typ').options[byId('pitmaster_typ').options.length] = new Option(jr.pitmaster.type[j], jr.pitmaster.type[j]);
+			}
+			byId('pitmaster_id').value = jr.pitmaster.pm[pitID].id;
+			byId('pitmaster_typ').value = jr.pitmaster.pm[pitID].typ;
+			clearOption('pitmaster_channel');
+			for (var i = 0; i < jr.channel.length; i++) {
+					byId('pitmaster_channel').options[byId('pitmaster_channel').options.length] = new Option('#' + jr.channel[i].number + ' - ' + jr.channel[i].name, jr.channel[i].number);
+			}
+			byId('pitmaster_channel').value = jr.pitmaster.pm[pitID].channel;
+			byId('pitmaster_set').value = jr.pitmaster.pm[pitID].set;
+			byId('pitmaster_value').value = jr.pitmaster.pm[pitID].value;
+			byId('pitmaster_settings').style.display = "inline";
 			showLoader('false');
 			showPitmasterProfile(jr.pitmaster.pm[pitID].pid);
 			changePitmasterTyp();
@@ -3906,7 +3906,7 @@
 	}
     
     function changePitmasterId(){
-        showPitmaster(byId('pitmaster_id').value);
+			showPitmaster(byId('pitmaster_id').value);
 	}
 	
 	function setPitmaster(){
