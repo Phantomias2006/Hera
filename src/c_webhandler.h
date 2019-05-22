@@ -805,7 +805,7 @@ class BodyWebHandler: public AsyncWebHandler {
       }
 
       // kann gespeichert werden und was ist mit stoppen des autotune
-      if (_auto && id == 0) {
+      if (_auto && (id == 0 || id == 1)) {
         pitMaster[id].active = AUTO;
         if (pid[pitMaster[id].pid].autotune) {
           autotune.run = 1;    // start Autotune, falls schon gelaufen, dann neustart
