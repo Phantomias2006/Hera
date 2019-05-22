@@ -131,7 +131,7 @@
 
 // HW Config
 #ifdef MINI
-#define PIEPSER     24       // IO for Alarm
+#define PIEPSER     2        // IO for Alarm
 #define SPI_CS      21 	     // SPI slave select
 #define ADC_VREF    3300     // 3.3V Vref
 #define ADC_CLK     1600000  // SPI clock 1.6MHz
