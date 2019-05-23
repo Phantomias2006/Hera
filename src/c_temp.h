@@ -97,78 +97,52 @@ float calcT(int r, byte typ){
   return (erg>-31)?erg:INACTIVEVALUE;
 }
 
-
-
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Reading Temperature ADC
-void get_Temperature() {
+void get_Temperature(uint8_t index) {
+
+  uint8_t i = index;
+
   // Read NTC Channels
-  for (int i=0; i < sys.ch; i++)  {
+  float value;
 
-    float value;
-/* 
-    // NTC der Reihe nach auslesen
-    if (MAX1161x_ADDRESS == MAX11613_ADDRESS && i<4 && i!=0) {
-      if (i == ci) {
-        value = calcT(get_adc_average(3-i),ch[i].typ);
-        //Serial.println(value);
-      } else value = ch[i].temp;
-      
-    }
-    else */ if (MAX1161x_ADDRESS == MAX11615_ADDRESS)    value = calcT(get_adc_average(i),ch[i].typ);
-    else value = INACTIVEVALUE;
+  value = calcT(get_adc_average(i),ch[i].typ);
 
-#ifdef MINI
-    value = calcT(get_adc_average(i),ch[i].typ);
-#endif
- 
-    // Temperatursprung außerhalb der Grenzen macht keinen Sinn
-    if (ch[i].temp == INACTIVEVALUE && (value < -15.0 || value > 300.0)) value = INACTIVEVALUE;  // wrong typ
- 
-    // Wenn KTYPE existiert, gibt es nur 4 anschließbare NTC. 
-    // KTYPE wandert dann auf Kanal 5
-    if (sys.typk && sys.hwversion == 1) {
-      if (i == 4) value = get_thermocouple(false);
-      if (i == 5) value = get_thermocouple(true);
-      //if (i == 5) value = INACTIVEVALUE;
-    }
+  // Temperatursprung außerhalb der Grenzen macht keinen Sinn
+  if (ch[i].temp == INACTIVEVALUE && (value < -15.0 || value > 300.0)) value = INACTIVEVALUE;  // wrong typ
 
-    // Umwandlung C/F
-    if ((sys.unit == "F") && value!=INACTIVEVALUE) {  // Vorsicht mit INACTIVEVALUE
-      value *= 9.0;
-      value /= 5.0;
-      value += 32;
-    }
-
-    // Temperature Average Buffer by Pitmaster
-    if (sys.transform) {
-      if (value != INACTIVEVALUE) {
-        mem_add(value, i);
-      } else {
-        mem_clear(i);
-      }
-      value = mem_a(i);
-    }
-    
-    ch[i].temp = value;
-    
-    int max = ch[i].max;  // nur für Anzeige
-    int min = ch[i].min;  // nur für Anzeige
-   
-    // Show limits in OLED  
-    if ((max > min) && value!=INACTIVEVALUE) {
-      int match = map((int)value,min,max,3,18);
-      ch[i].match = constrain(match, 0, 20);
-    }
-    else ch[i].match = 0;
-    
+  // Umwandlung C/F
+  if ((sys.unit == "F") && value!=INACTIVEVALUE) {  // Vorsicht mit INACTIVEVALUE
+    value *= 9.0;
+    value /= 5.0;
+    value += 32;
   }
+
+  // Temperature Average Buffer by Pitmaster
+  if (sys.transform) {
+    if (value != INACTIVEVALUE) {
+      mem_add(value, i);
+    } else {
+      mem_clear(i);
+    }
+    value = mem_a(i);
+  }
+  
+  ch[i].temp = value;
+  
+  int max = ch[i].max;  // nur für Anzeige
+  int min = ch[i].min;  // nur für Anzeige
 
   // Open Lid Detection
   open_lid();
 
 }
 
+void get_TemperatureAll()
+{
+  for(uint8_t i = 0; i < sys.ch; i++)
+    get_Temperature(i);
+}
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Initialize Temperature Channels

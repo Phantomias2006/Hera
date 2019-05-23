@@ -19,18 +19,10 @@
  ****************************************************/
 
 #include <Wire.h>                 // I2C
-//#include <SPI.h>                  // SPI
-//#include <ESP8266WiFi.h>          // WIFI   // CaptivePortal
-//#include <WiFiClientSecure.h>     // HTTPS
 #include <TimeLib.h>              // TIME
 #include <EEPROM.h>               // EEPROM
 #include <FS.h>                   // FILESYSTEM
 #include <ArduinoJson.h>          // JSON
-//#include <DNSServer.h>    // CaptivePortal
-#ifdef NANO
-#include <ESP8266mDNS.h>          // mDNS
-#include <EspAsyncTCP.h>          // ASYNCTCP
-#else
 #include <NexUpload.h>
 #include <Nextion.h>
 #include <ESPmDNS.h>              // mDNS
@@ -40,30 +32,17 @@
 #define FLASH_SECTOR_SIZE SPI_FLASH_SEC_SIZE
 #include <Mcp3208.h>
 #include <Servo.h>
-#endif
 #include <ESPAsyncWebServer.h>    // https://github.com/me-no-dev/ESPAsyncWebServer/issues/60
 #include "AsyncJson.h"            // ASYNCJSON
 #include <AsyncMqttClient.h>      // ASYNCMQTT
 //#include <StreamString.h>
 
 extern "C" {
-#ifdef NANO
-#include "user_interface.h"
-#include "core_esp8266_si2c.c"
-#include "spi_flash.h"
-#else
 #include "rom/rtc.h"
 #include "SPIFFS.h"
 #include "esp_spi_flash.h"
 #define SPI_FLASH_RESULT_OK ESP_OK
-#endif
-
 }
-
-#ifdef NANO
-extern "C" uint32_t _SPIFFS_start;      // START ADRESS FS
-extern "C" uint32_t _SPIFFS_end;        // FIRST ADRESS AFTER FS
-#endif
 
 // number of items in an array
 #define NUMITEMS(arg) ((unsigned int) (sizeof (arg) / sizeof (arg [0])))
@@ -469,11 +448,6 @@ enum {NOPARA, TESTPARA, SENDTS, THINGHTTP};                       // Config GET/
 
 // INIT
 void set_serial();                                // Initialize Serial
-#ifdef NANO
-void set_button();                                // Initialize Buttons
-static inline boolean button_input();             // Dectect Button Input
-static inline void button_event();                // Response Button Status
-#endif
 void controlAlarm();                              // Control Hardware Alarm
 void set_piepser();
 void piepserOFF();
@@ -483,31 +457,13 @@ void pbguard();
 // SENSORS
 void set_sensor();                                // Initialize Sensors
 int  get_adc_average (byte ch);                   // Reading ADC-Channel Average
-void get_Vbat();                                   // Reading Battery Voltage
-void cal_soc();
 
 // TEMPERATURE (TEMP)
 float calcT(int r, byte typ);                     // Calculate Temperature from ADC-Bytes
-void get_Temperature();                           // Reading Temperature ADC
-void set_channels(bool init);                              // Initialize Temperature Channels
+void get_Temperature();                           // Reading single Temperature ADC
+void get_TemperatureAll();                        // Reading all Temperature ADC
+void set_channels(bool init);                     // Initialize Temperature Channels
 void transform_limits();                          // Transform Channel Limits
-
-// OLED
-#ifdef NANO
-#include <SSD1306.h>              
-#include <OLEDDisplayUi.h>  
-SSD1306 display(OLED_ADRESS, SDA, SCL);
-OLEDDisplayUi ui     ( &display );
-#endif
-
-#ifdef NANO
-// FRAMES
-void drawConnect();                       // Frane while System Start
-void drawLoading();                               // Frame while Loading
-void drawQuestion(int counter);                    // Frame while Question
-void drawMenu();
-void set_OLED();                                  // Configuration OLEDDisplay
-#endif
 
 // FILESYSTEM (FS)
 bool loadfile(const char* filename, File& configFile);
@@ -536,10 +492,6 @@ void get_rssi();
 void reconnect_wifi();
 void stop_wifi();
 void check_wifi();
-#ifdef NANO
-WiFiEventHandler wifiConnectHandler;
-WiFiEventHandler wifiDHCPTimeout, wifiDisconnectHandler, softAPDisconnectHandler;
-#endif
 void connectToMqtt();
 void EraseWiFiFlash();
 void connectWiFi();
@@ -637,44 +589,10 @@ void set_serial() {
   DPRINTLN();
   DPRINTLN();
 
-#ifdef NANO
-  IPRINTLN(ESP.getResetReason());
-
-  rst_info *myResetInfo;
-  myResetInfo = ESP.getResetInfoPtr();
-  resetreason = myResetInfo->reason;
-  //Serial.printf("myResetInfo->reason %x \n", myResetInfo->reason); // reason is uint32
-#else
   resetreason = rtc_get_reset_reason(0); // get reset reason from ESP32 core 0
-#endif
 
   setserverurl(true);       // Initialize Server URL container
 }
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Check why reset
-bool checkResetInfo() {
-
-  // Source: Arduino/cores/esp8266/Esp.cpp
-  // Source: Arduino/tools/sdk/include/user_interface.h
-#ifdef NANO
-  switch (resetreason) {
-
-    case REASON_DEFAULT_RST: 
-    case REASON_SOFT_RESTART:       // SOFTWARE RESTART
-    case REASON_EXT_SYS_RST:        // EXTERNAL (FLASH)
-    case REASON_DEEP_SLEEP_AWAKE:   // WAKE UP
-      return true;  
-
-    case REASON_EXCEPTION_RST:      // EXEPTION
-    case REASON_WDT_RST:            // HARDWARE WDT
-    case REASON_SOFT_WDT_RST:       // SOFTWARE WDT
-      break;
-  }
-#endif
-  return false;
-}
-
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Initialize System-Settings, if not loaded from EE
@@ -706,173 +624,6 @@ void set_system() {
   sys.restartnow = false;
 
   update.state = -1;  // Kontakt zur API herstellen
-}
-//int ci=1;
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Main Timer
-       
-bool osticker = false;
-uint16_t oscounter = 0;
-
-#ifdef NANO
-os_timer_t Timer1;  
-
-void timerCallback(void *pArg) { 
-  osticker = true;
-  *((int *) pArg) += 1;
-} 
-
-void set_ostimer() {
- os_timer_setfn(&Timer1, timerCallback, &oscounter);
- os_timer_arm(&Timer1, 250, true);
-}
-#else
-hw_timer_t *Timer1 = NULL;
-
-void IRAM_ATTR  timerCallback() { 
-  osticker = true;
-  //*((int *) pArg) += 1;
-  oscounter += 1;
-} 
-
-void set_ostimer() {
- Timer1 = timerBegin(0, 80, true);
- timerAttachInterrupt(Timer1, timerCallback, true);
- timerAlarmWrite(Timer1, 250000, true);
- timerAlarmEnable(Timer1);
-}
-#endif
-
-void maintimer(bool stby = false) {
-  if (osticker) { 
-
-    if (stby) {
-      if (!(oscounter % 4)) {     // 1 s
-        get_Vbat(); 
-        if (!sys.stby) ESP.restart();
-      }
-    } else {
-
-      if (!(oscounter % 1)) {       // 250 ms
-        piepserOFF();
-        pulsalarm = !pulsalarm;         // OLED
-      }
-
-      // Temperature and Battery Measurement Timer
-      if (!(oscounter % INTERVALSENSOR)) {     // 1 s
-        get_Temperature();                            // Temperature Measurement
-        //ci++; if (ci > 3) ci = 1;
-        get_Vbat();                                   // Battery Measurement
-        if (millis() < BATTERYSTARTUP) cal_soc();     // schnelles aktualisieren beim Systemstart
-
-        controlAlarm();
-      }
-
-      if (battery.state == 3 && (sys.god & (1<<5)) && !(oscounter % 40)) pbguard();     // alle 10s
-
-      // RSSI and kumulative Battery Measurement
-      if (!(oscounter % INTERVALBATTERYSIM)) {     // 30 s
-        get_rssi();                                   // RSSI Measurement 
-        cal_soc();                                    // Kumulative Battery Value
-      }
-
-      
-
-      // PRIVATE MQTT
-      if (!(oscounter % (iot.P_MQTT_int*4))) {   // variable
-        if (wifi.mode == 1 && update.state == 0 && iot.P_MQTT_on) sendpmqtt();
-      } 
-
-      // NOTIFICATION (kein Timer notwenig)   (kann noch verbessert werden, siehe sendNotification())
-      if (!(oscounter % 1)) { 
-        if (wifi.mode == 1 && update.state == 0) sendNotification();
-      }
-
-      // NANO CLOUD (nach Notification)
-      if (!(oscounter % (iot.CL_int*4)) || lastUpdateCloud) {   // variable
-        if (wifi.mode == 1 && update.state == 0 && iot.CL_on) {
-          if (sendAPI(0)) {
-            apiindex = APICLOUD;
-            urlindex = CLOUDLINK;
-            parindex = NOPARA;
-            sendAPI(2);
-          } else {
-            #ifdef MEMORYCLOUD  
-              cloudcount = 0;           // ansonsten von API zurückgesetzt
-            #endif 
-          }
-        }
-        lastUpdateCloud = false;
-      }
-
-      #ifdef MEMORYCLOUD        // Zurücksetzen einbauen (CL_int, Temp_einheit ...)
-      if (!(oscounter % ((iot.CL_int/3)*4))) {    // 
-        if (iot.CL_on && cloudcount < CLOUDLOGMAX) saveLog();
-      }
-      #endif
-
-      #ifdef THINGSPEAK
-
-      // THINGSPEAK
-      if (!(oscounter % (iot.TS_int*4))) {   // variable
-        if (wifi.mode == 1 && update.state == 0 && iot.TS_on) {
-          if (iot.TS_writeKey != "" && iot.TS_chID != "") {
-            if (sendAPI(0)) {
-              apiindex = NOAPI;
-              urlindex = TSLINK;
-              parindex = SENDTS;
-              sendAPI(2);
-            }
-          }
-        }
-      } 
-
-      #endif
-
-      // ALARM REPEAT
-      if (!(oscounter % 60)) {     // 15 s
-       for (int i=0; i < sys.ch; i++) {
-        if (ch[i].isalarm)  {
-          if (ch[i].repeat > 1) {
-            ch[i].repeat -= 1;
-            ch[i].repeatalarm = true;
-          }
-        } else ch[i].repeat = pushd.repeat;
-       }
-      }
-
-      // OLED FLASH TIMER
-      if (inWork) {
-        if (!(oscounter % FLASHINWORK)) {     // 500 ms
-        flashinwork = !flashinwork;
-        }
-      }  
-    }
-    osticker = false;
-    //Serial.println(oscounter);
-    if (oscounter == 2400) oscounter = 0;   // 10 min (muss durch 5, 2, 1, 0,5, 0,25 ganzzahlig teilbar sein)
-  }
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Standby oder Mess-Betrieb
-bool standby_control() {
-  if (sys.stby) {
-
-    drawLoading();                    // Refresh Battery State
-    if (!ladenshow) {  
-      ladenshow = true;
-      IPRINTPLN("Standby");
-      //stop_wifi();  // führt warum auch immer bei manchen Nanos zu ständigem Restart
-      disableAllHeater();             // Stop Pitmaster
-      server.reset();                 // Stop Webserver
-      piepserOFF();                   // Stop Pieper
-    }
-
-    maintimer(1);                     // Check if Standby
-    return 1;
-  }
-  return 0;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++

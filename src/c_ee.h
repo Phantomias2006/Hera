@@ -133,15 +133,6 @@ M24C02 m24;
 // Initalize EEPROM
 void setEE() {
 
-#ifdef NANO
-  // EEPROM Sector: 0xFB, ab Sector 0xFC liegen System Parameter
-  IPRINTP("EEPROM: 0x"); // letzter Sector von APP2
-  DPRINT((((uint32_t)&_SPIFFS_end - 0x40200000) / SPI_FLASH_SEC_SIZE),HEX);
-  DPRINTP(" (");
-  DPRINT(EEPROM_SIZE, DEC);  // ESP.getFreeSketchSpace()
-  DPRINTPLN("B)");
-#endif
-
   EEPROM.begin(EEPROM_SIZE);
 
   // WIFI SETTINGS:         0    - 300

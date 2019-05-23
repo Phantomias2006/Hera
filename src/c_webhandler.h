@@ -463,7 +463,6 @@ public:
       } else request->send(500, TEXTPLAIN, BAD_PATH);
       return;
 
-#ifdef MINI
     // REQUEST: /upload
     } else if (request->url() == UPLOAD) {
       if (request->method() == HTTP_GET) {
@@ -479,7 +478,6 @@ public:
         request->send(200, TEXTPLAIN, TEXTTRUE);
       } else request->send(500, TEXTPLAIN, BAD_PATH);
       return;
-#endif
 
     // REQUEST: File from SPIFFS
     } else if (request->method() == HTTP_GET){
@@ -610,7 +608,7 @@ class BodyWebHandler: public AsyncWebHandler {
       transform_limits();                                       // Transform Limits
       setconfig(eCHANNEL,{});                                   // Save Config
       for (uint8_t j = 0; j < sys.ch; j++) mem_clear(j);        // Clear Temperature Memory
-      get_Temperature();                                        // Update Temperature
+      get_TemperatureAll();                                        // Update Temperature
     }
   
     return 1;

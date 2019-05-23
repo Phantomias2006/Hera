@@ -55,45 +55,20 @@
   #define IPRINTF(...)    //blank line
 #endif
 
-#ifdef MINI
-#define drawUpdate(a)
-#define drawQuestion(a)
-#define drawConnect()
-#define drawLoading()
-#define set_button()
-#define button_input() 0u
-#define button_event()
-#define set_OLED() set_display()
-#define update_OLED() update_display()
-#endif
-
-
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
 // INCLUDE SUBROUTINES
 #include <vector>
 #include "c_init.h"
 #include "c_median.h"
-#ifdef NANO
-#include "c_sensor_nano.h"
-#include "c_pitmaster_nano.h"
-#else
 #include "c_sensor_mini.h"
 #include "c_pitmaster_mini.h"
-#endif
 #include "c_temp.h"
 #include "c_ee.h"
 #include "c_fs.h"
 #include "c_icons.h"
 #include "c_wifi.h"
-#ifdef NANO
-#include "c_frames.h"
-#else
 #include "c_display.h"
-#endif
 #include "c_webhandler.h"
-#ifdef NANO
-#include "c_button.h"
-#endif
 #include "c_com.h"
 #include "c_bot.h"
 #include "c_pmqtt.h"
@@ -102,33 +77,29 @@
 #include "c_api.h"
 #include "c_ws.h"
  
+// Forward declaration
+void createTasks();
+
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // SETUP
 void setup() {  
 
-  //delay(1000);
-
   // Initialize Serial 
   set_serial(); Serial.setDebugOutput(true);
-  set_ostimer();
   printf("SDK version:%s\n", system_get_sdk_version()); //getSdkVersion
 
   // Initialize serial number
-#ifdef NANO
-  sprintf(serialnumber, "%06x", ESP.getChipId());
-#else
   sprintf(serialnumber, "%06x", ESP.getEfuseMac());
-#endif
 
-  // Initialize OLED
-  set_OLED();
+  // Initialize display
+  set_display();
 
   // Open Config-File
   check_sector();
   setEE(); start_fs();
 
-  // Current Battery Voltage
-  get_Vbat(); get_rssi();
+  get_rssi();
 
   if (!sys.stby) {
     
@@ -158,102 +129,181 @@ void setup() {
     // Initialize Sensors
     set_sensor();
     set_channels(0);
-
-    // Initialize Buttons
-    set_button();
         
     // Current Wifi Signal Strength
-    get_Vbat();
     get_rssi();
-    cal_soc();
     
     // Initialize Pitmaster
     set_pitmaster(0); 
 
-    // Check Reset Info
-    if (checkResetInfo()) {
-      //if (SPIFFS.remove(LOG_FILE)) Serial.println("Neues Log angelegt");
-    }
-
+    // Start all tasks
+    createTasks();
   }
 }
 
 
+void MainTask( void * parameter ) {
+
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+
+  for(;;) {
+
+    // Wait for the next cycle.
+    vTaskDelayUntil(&xLastWakeTime, 100);
+
+    // Detect Serial Input
+    static char serialbuffer[300];
+    if (readline(Serial.read(), serialbuffer, 300) > 0) {
+      read_serial(serialbuffer);
+    }
+
+    // Manual Restart
+    if (sys.restartnow) {
+      if (wifi.mode == 5)
+        WiFi.disconnect();
+      delay(100);
+      yield();
+      ESP.restart();
+    }
+
+    // WiFi - Monitoring
+    wifimonitoring();
+
+    // MQTT - Abschaltung und Initialisierung
+    checkMqtt(); 
+
+    // Detect OTA
+    #ifdef OTA
+      ArduinoOTA.handle();
+    #endif
+
+    // HTTP Update
+    check_api();
+    if (update.state > 0)
+      do_http_update();
+
+  }
+}
+
+void TemperatureTask( void * parameter )
+{
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  uint8_t sensorIndex = 0;
+
+  for(;;) {
+
+    // Wait for the next cycle.
+    vTaskDelayUntil(&xLastWakeTime, 50);
+
+    get_Temperature(sensorIndex);
+    controlAlarm(sensorIndex);
+
+    sensorIndex++;
+    if(sensorIndex == sys.ch)
+      sensorIndex = 0;
+
+  }
+}
+
+void PitmasterTask( void * parameter )
+{
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+
+  for(;;) {
+
+    // Wait for the next cycle.
+    vTaskDelayUntil(&xLastWakeTime, 100);
+    pitmaster_control(0);
+    pitmaster_control(1);
+
+  }
+}
+
+void ConnectTask( void * parameter )
+{
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+
+  for(;;) {
+
+    // Wait for the next cycle.
+    vTaskDelayUntil(&xLastWakeTime, 1000);
+
+    if (wifi.mode == 1 && update.state == 0 && iot.P_MQTT_on)
+      sendpmqtt();
+
+    if (wifi.mode == 1 && update.state == 0)
+      sendNotification();
+    
+    // NANO CLOUD (nach Notification)
+    if (lastUpdateCloud) {
+      if (wifi.mode == 1 && update.state == 0 && iot.CL_on) {
+        if (sendAPI(0)) {
+          apiindex = APICLOUD;
+          urlindex = CLOUDLINK;
+          parindex = NOPARA;
+          sendAPI(2);
+        } else {
+          #ifdef MEMORYCLOUD  
+            cloudcount = 0;           // ansonsten von API zurückgesetzt
+          #endif 
+        }
+      }
+      lastUpdateCloud = false;
+    }
+
+    // ALARM REPEAT
+      if (1) {     // 15 s
+       for (int i=0; i < sys.ch; i++) {
+        if (ch[i].isalarm)  {
+          if (ch[i].repeat > 1) {
+            ch[i].repeat -= 1;
+            ch[i].repeatalarm = true;
+          }
+        } else ch[i].repeat = pushd.repeat;
+       }
+      }
+  }
+}
+
+void createTasks()
+{
+    xTaskCreate(
+              TemperatureTask,  /* Task function. */
+              "TemperatureTask",/* String with name of task. */
+              10000,            /* Stack size in bytes. */
+              NULL,             /* Parameter passed as input of the task */
+              0,                /* Priority of the task. */
+              NULL);            /* Task handle. */
+
+    xTaskCreate(
+              PitmasterTask,    /* Task function. */
+              "PitmasterTask",  /* String with name of task. */
+              10000,            /* Stack size in bytes. */
+              NULL,             /* Parameter passed as input of the task */
+              1,                /* Priority of the task. */
+              NULL);            /* Task handle. */
+
+    xTaskCreate(
+              MainTask,         /* Task function. */
+              "MainTask",       /* String with name of task. */
+              10000,            /* Stack size in bytes. */
+              NULL,             /* Parameter passed as input of the task */
+              2,                /* Priority of the task. */
+              NULL);            /* Task handle. */
+
+    xTaskCreate(
+              ConnectTask,      /* Task function. */
+              "ConnecTask",     /* String with name of task. */
+              10000,            /* Stack size in bytes. */
+              NULL,             /* Parameter passed as input of the task */
+              3,                /* Priority of the task. */
+              NULL);            /* Task handle. */
+}
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // LOOP
 void loop() {
-
-  // Detect Serial Input
-  static char serialbuffer[300];
-  if (readline(Serial.read(), serialbuffer, 300) > 0) {
-    read_serial(serialbuffer);
-  }
-
-  // Manual Restart
-  if (sys.restartnow) {
-    if (wifi.mode == 5) WiFi.disconnect();
-    delay(100);
-    yield();
-    ESP.restart();
-  }
-  
-  // Standby oder Mess-Betrieb
-  if (standby_control()) return;
-
-  // Close Start Screen
-  if (question.typ == SYSTEMSTART && millis() > 3000) {
-    displayblocked = false;   // Close Start Screen (if not already done)
-    question.typ = NO;
-  }
-
-
-  // WiFi - Monitoring
-  wifimonitoring();
-
-  // MQTT - Abschaltung und Initialisierung
-  checkMqtt(); 
-  
-  // Detect OTA
-  #ifdef OTA
-    ArduinoOTA.handle();
-  #endif
-
-  // HTTP Update
-  check_api();
-  if (update.state > 0) do_http_update();
-  
-  // Detect Button Event
-  if (button_input()) button_event();
-  
-  // Update Display
-  int remainingTimeBudget;
-  if (!displayblocked)  remainingTimeBudget = update_OLED();
-  else remainingTimeBudget = 1;
-
-  // Timer Actions
-  if (remainingTimeBudget > 0) {
-    // Don't do stuff if you are below your time budget.
-
-    maintimer();
-
-    #ifdef AMPERE
-    ampere_control();
-    #endif
-
-    // Pitmaster eventuell raus aus der Bedingung
-#ifdef MINI
-    pitmaster_control(0);      // Pitmaster 1
-    pitmaster_control(1);      // Pitmaster 2
-#elif NANO
-    pitmaster_control(0);      // Pitmaster 1
-    updateServo();
-    
-    if (servointerrupt) {   // nur innerhalb eines Servo-Takts
-      delay(10);   // sonst geht das Wifi Modul nicht in Standby, yield() reicht nicht!
-    }
-#endif
-  }
-  
+  delay(1000);
 }
 
 

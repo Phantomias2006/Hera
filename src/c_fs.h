@@ -648,7 +648,7 @@ bool modifyconfig(byte count, bool neu) {
 
       if (neu) {
         question.typ = IPADRESSE;     // Notification IP Adresse
-        drawQuestion(0);
+        //drawQuestion(0);
         //if (wifi.savedlen > 0)        // schon Daten vorhanden
           wifi.savedlen++;  // neue Daten
       }
@@ -722,39 +722,8 @@ void start_fs() {
     DPRINTPLN("f:FS");
     return;
   }
-
-#ifdef NANO
-  IPRINTP("SPIFFS: 0x");
-  DPRINT((((uint32_t)&_SPIFFS_start - 0x40200000) / SPI_FLASH_SEC_SIZE), HEX);
-  DPRINTP(" (");
-  DPRINT(((uint32_t)&_SPIFFS_end - (uint32_t)&_SPIFFS_start)/1024, DEC);
-  DPRINTPLN("K)");
-  // 0x40200000 ist der Speicherort des SPI FLASH in der Memory Map
-#endif
-
   String fileName;
 
-#ifdef NANO
-  Dir dir = SPIFFS.openDir("/");
-  while (dir.next()) {
-    IPRINTP("FS: ");
-    //fileName = dir.fileName();
-    //size_t fileSize = dir.fileSize();
-    //DPRINTF("[INFO]\tFS File: %s, size: %s\n", fileName.c_str(), formatBytes(fileSize).c_str());
-    DPRINT(dir.fileName());
-    File f = dir.openFile("r");
-    DPRINTP("\t: ");
-    DPRINTLN(formatBytes(f.size()));
-  }
-
-  FSInfo fs_info;
-  SPIFFS.info(fs_info);
-  IPRINTP("Total: ");
-  DPRINT(formatBytes(fs_info.totalBytes));
-  DPRINTP("\tUsed: ");
-  DPRINTLN(formatBytes(fs_info.usedBytes));
-
-#else
   File root = SPIFFS.open("/");
   File file = root.openNextFile();
   while (file) {
@@ -773,7 +742,6 @@ void start_fs() {
   DPRINT(formatBytes(SPIFFS.totalBytes()));
   DPRINTP("\tUsed: ");
   DPRINTLN(formatBytes(SPIFFS.usedBytes()));
-#endif
 
   //u32_t total, used;
   //int res = SPIFFS_info(&fs, &total, &used);

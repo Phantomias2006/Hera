@@ -34,12 +34,10 @@ void server_setup() {
   server.addHandler(&nanoWebHandler);
   server.addHandler(&bodyWebHandler);
 
-#ifdef MINI
   // handler for uploading nextion tft file
   server.on("/nexupload", HTTP_POST, [](AsyncWebServerRequest *request){
      request->send(200, TEXTPLAIN, TEXTTRUE);
   }, onNexUpload);
-#endif
     
   server.on("/help",HTTP_GET, [](AsyncWebServerRequest *request) {
     request->redirect("https://github.com/WLANThermo-nano/WLANThermo_nano_Software/blob/master/README.md");
@@ -48,15 +46,8 @@ void server_setup() {
   server.on("/info",[](AsyncWebServerRequest *request){
     size_t usedBytes;
     size_t totalBytes;
-#ifdef NANO 
-    FSInfo fs_info;
-    SPIFFS.info(fs_info);
-    usedBytes = fs_info.usedBytes;
-    totalBytes = fs_info.totalBytes;
-#else
     usedBytes = SPIFFS.usedBytes();
     totalBytes = SPIFFS.totalBytes();
-#endif
     String ssidstr;
     for (int i = 0; i < wifi.savedlen; i++) {
         ssidstr += " ";
@@ -75,9 +66,6 @@ void server_setup() {
       +"ssid: "     + ssidstr + "\n"
       +"wifimode: " + String(WiFi.getMode()) + "\n"
       +"mac:" + String(getMacAddress()) + "\n"
-#ifdef NANO
-      +"rS: "      + String(ESP.getFlashChipRealSize()) + "\n"
-#endif
       +"iS: "      + String(ESP.getFlashChipSize())
       );
   });
@@ -134,15 +122,9 @@ void server_setup() {
    
 
   server.on("/newtoken",[](AsyncWebServerRequest *request){
-#ifdef NANO
-    ESP.wdtDisable();
-#endif
     iot.CL_token = newToken();
     setconfig(eTHING,{});
     lastUpdateCloud = 1; // Daten senden forcieren
-#ifdef NANO
-    ESP.wdtEnable(10);
-#endif
     request->send(200, TEXTPLAIN, iot.CL_token);
   });
 

@@ -391,7 +391,7 @@ void stopautotune(byte id) {
     setconfig(ePIT,{});     // save
   
     question.typ = TUNE;
-    drawQuestion(autotune.stop);
+    //TODO drawQuestion(autotune.stop);
     autotune.stop = 0;
   }
 }

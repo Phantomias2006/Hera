@@ -63,11 +63,7 @@ void set_AP() {
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // WiFi Handler
-#ifdef NANO
-void onWifiConnect(const WiFiEventStationModeGotIP& event) {
-#else
 void onWifiConnect(WiFiEvent_t event, WiFiEventInfo_t info) {
-#endif
   
   DPRINTLN();
   IPRINTP("STA: "); DPRINTLN(WiFi.SSID());
@@ -109,11 +105,7 @@ void onWifiConnect(WiFiEvent_t event, WiFiEventInfo_t info) {
   }  
 }
 
-#ifdef NANO
-void onWifiDisconnect(const WiFiEventStationModeDisconnected& event) {
-#else
 void onWifiDisconnect(WiFiEvent_t event, WiFiEventInfo_t info) {
-#endif
   Serial.println("wifi: disconnect");
 
   // Neuaufbau
@@ -124,11 +116,7 @@ void onWifiDisconnect(WiFiEvent_t event, WiFiEventInfo_t info) {
   wifi.mqttreconnect = 0;
 }
 
-#ifdef NANO
-void onsoftAPDisconnect(const WiFiEventSoftAPModeStationDisconnected& event) {
-#else
 void onsoftAPDisconnect(WiFiEvent_t event, WiFiEventInfo_t info) {
-#endif
   
   Serial.print("NO AP: ");
   Serial.println(WiFi.getMode());
@@ -138,7 +126,6 @@ void onDHCPTimeout() {
   //Serial.println("nicht verbunden");
 }
 
-#ifdef MINI
 void wifi_station_set_hostname(const char *ourname) {
   WiFi.setHostname(ourname);
 }
@@ -150,13 +137,6 @@ void set_wifi_handler() {
 uint8_t wifi_softap_get_station_num() {
   return WiFi.softAPgetStationNum();
 }
-#else
-void set_wifi_handler() {
-  wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
-  wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
-  softAPDisconnectHandler = WiFi.onSoftAPModeStationDisconnected(onsoftAPDisconnect);
-}
-#endif
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Configuration WiFi
@@ -179,11 +159,6 @@ void set_wifi() {
   holdssid.connect = false;
   wifi.savecount = 0;
   wifi.reconnecttime = 0;                   // Verbindungsaufbau beim Start
-
-  if (checkResetInfo()) {
-    question.typ = SYSTEMSTART;
-    drawConnect();                          // Start screen
-  }
   
   set_AP();                               // Start AP-Mode
 }
@@ -255,13 +230,6 @@ void stop_wifi() {
   if (millis() - wifi.turnoffAPtimer > 1000) {
     Serial.println("wifi: stop");
     pmqttClient.disconnect();
-    #ifdef NANO
-    wifi_station_disconnect();
-    wifi_set_opmode(NULL_MODE);
-    wifi_set_sleep_type(MODEM_SLEEP_T);
-    wifi_fpm_open();
-    wifi_fpm_do_sleep(0xFFFFFFF);
-    #endif
     //WiFi.disconnect();
     //delay(100); // leider notwendig
     //WiFi.mode(WIFI_OFF);
@@ -333,10 +301,6 @@ void wifimonitoring() {
 
     case 1:                           // STA-Mode
 
-#ifdef NANO
-      MDNS.update();
-#endif
-      
       // STA etabliert, AP abschalten, wenn keiner mehr verbunden
       if (wifi.disconnectAP) {
         uint8_t client_count = wifi_softap_get_station_num();
