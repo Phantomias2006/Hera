@@ -136,6 +136,19 @@ void setup() {
     // Initialize Pitmaster
     set_pitmaster(0); 
 
+    // Enable automatic ligth sleep to save power
+    esp_pm_config_esp32_t pm_config;
+    esp_err_t ret;
+    pm_config.max_cpu_freq = RTC_CPU_FREQ_240M;
+    pm_config.min_cpu_freq = RTC_CPU_FREQ_XTAL;
+    pm_config.light_sleep_enable = true;
+  
+    if((ret = esp_pm_configure(&pm_config)) != ESP_OK) {
+        Serial.printf("pm config error %s\n", \
+                ret == ESP_ERR_INVALID_ARG ? \
+                "ESP_ERR_INVALID_ARG":"ESP_ERR_NOT_SUPPORTED");
+    }
+
     // Start all tasks
     createTasks();
   }
@@ -193,7 +206,7 @@ void TemperatureTask( void * parameter )
   for(;;) {
 
     // Wait for the next cycle.
-    vTaskDelayUntil(&xLastWakeTime, 50);
+    vTaskDelayUntil(&xLastWakeTime, 100);
 
     get_Temperature(sensorIndex);
     controlAlarm(sensorIndex);
@@ -227,6 +240,10 @@ void ConnectTask( void * parameter )
 
     // Wait for the next cycle.
     vTaskDelayUntil(&xLastWakeTime, 1000);
+
+    char buffer[1024];
+    vTaskGetRunTimeStats(buffer);
+    Serial.print(buffer);
 
     if (wifi.mode == 1 && update.state == 0 && iot.P_MQTT_on)
       sendpmqtt();

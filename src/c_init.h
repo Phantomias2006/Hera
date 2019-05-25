@@ -41,6 +41,7 @@ extern "C" {
 #include "rom/rtc.h"
 #include "SPIFFS.h"
 #include "esp_spi_flash.h"
+#include "esp_pm.h"
 #define SPI_FLASH_RESULT_OK ESP_OK
 }
 
