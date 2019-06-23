@@ -214,7 +214,6 @@ void TemperatureTask( void * parameter )
     sensorIndex++;
     if(sensorIndex == sys.ch)
       sensorIndex = 0;
-
   }
 }
 
@@ -241,9 +240,9 @@ void ConnectTask( void * parameter )
     // Wait for the next cycle.
     vTaskDelayUntil(&xLastWakeTime, 1000);
 
-    char buffer[1024];
-    vTaskGetRunTimeStats(buffer);
-    Serial.print(buffer);
+    //char buffer[1024];
+    //vTaskGetRunTimeStats(buffer);
+    //Serial.print(buffer);
 
     if (wifi.mode == 1 && update.state == 0 && iot.P_MQTT_on)
       sendpmqtt();

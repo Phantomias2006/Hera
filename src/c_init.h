@@ -30,7 +30,6 @@
 #include <analogWrite.h>
 #define analogWriteFreq analogWriteFrequency
 #define FLASH_SECTOR_SIZE SPI_FLASH_SEC_SIZE
-#include <Mcp3208.h>
 #include <Servo.h>
 #include <ESPAsyncWebServer.h>    // https://github.com/me-no-dev/ESPAsyncWebServer/issues/60
 #include "AsyncJson.h"            // ASYNCJSON

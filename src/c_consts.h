@@ -30,7 +30,7 @@
 #define SERVERAPIVERSION "1"
 
 // CHANNELS
-#define MAXCHANNELS 8                     // UPDATE AUF HARDWARE 4.05
+#define MAXCHANNELS 12                     // UPDATE AUF HARDWARE 4.05
 #define INACTIVEVALUE  999             // NO NTC CONNECTED
 #define SENSORTYPEN    12               // NUMBER OF SENSORS
 #define LIMITUNTERGRENZE -31           // MINIMUM LIMIT
@@ -65,11 +65,6 @@
 #define INTERVALCOMMUNICATION 120     // 30 s
 #define INTERVALBATTERYSIM 120        // 30 s
 #define FLASHINWORK 2                 // 500 ms
-
-// BUS
-#define SDA 0
-#define SCL 2
-#define THERMOCOUPLE_CS 12          // Nur Test-Versionen, Konflikt Pitsupply
 
 // BUTTONS
 #define btn_r  4                    // Pullup vorhanden
@@ -117,9 +112,6 @@
 
 // HW Config
 #define PIEPSER     2        // IO for Alarm
-#define SPI_CS      21 	     // SPI slave select
-#define ADC_VREF    3300     // 3.3V Vref
-#define ADC_CLK     1600000  // SPI clock 1.6MHz
 
 #define PRODUCTNUMBERLENGTH 11
 

@@ -27,37 +27,12 @@
     
  ****************************************************/
 
-// Global variables
-MCP3208 adc(ADC_VREF, SPI_CS);
-
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Initialize Sensors
 void set_sensor() {
 
   // disable battery
   sys.hasBattery = false;
-
-   // configure PIN mode
-  pinMode(SPI_CS, OUTPUT);
-
-  // set initial PIN state
-  digitalWrite(SPI_CS, HIGH);
-
-  // initialize SPI interface for MCP3208
-  SPISettings settings(ADC_CLK, MSBFIRST, SPI_MODE0);
-  SPI.begin();
-  SPI.beginTransaction(settings);
-}
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Reading ADC-Channel Average
-int get_adc_average (uint8_t ch) {  
-
-  MCP3208::Channel mapping[8] = {MCP3208::SINGLE_0, MCP3208::SINGLE_1, MCP3208::SINGLE_2, MCP3208::SINGLE_3,
-                                 MCP3208::SINGLE_4, MCP3208::SINGLE_5, MCP3208::SINGLE_6, MCP3208::SINGLE_7};
-  word regdata = adc.read(mapping[ch]);
-
-  return regdata & 4095;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++
